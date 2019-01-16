@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/go-toolsmith/astcopy"
+	"github.com/lindell/mockay/astcopy"
 )
 
 // Generator does contain information what should be fixed in the code and how
@@ -89,14 +89,10 @@ func (f *Generator) Generate(path string) error {
 		}
 		fieldList = append(fieldList, mockFunc)
 
+		params := copyFieldList(fun.Params)
+
 		funcDec := &ast.FuncDecl{
-			Doc: &ast.CommentGroup{
-				List: []*ast.Comment{
-					{
-						Text: "// " + name + " mock",
-					},
-				},
-			},
+			Doc: comment("// " + name + " mock"),
 			Recv: &ast.FieldList{
 				List: []*ast.Field{
 					{
@@ -116,7 +112,10 @@ func (f *Generator) Generate(path string) error {
 			Name: &ast.Ident{
 				Name: name,
 			},
-			Type: astcopy.FuncType(fun),
+			Type: &ast.FuncType{
+				Params:  params,
+				Results: astcopy.FieldList(fun.Results),
+			},
 			Body: &ast.BlockStmt{
 				List: []ast.Stmt{
 					&ast.ReturnStmt{
@@ -130,7 +129,7 @@ func (f *Generator) Generate(path string) error {
 										Name: name + "Func",
 									},
 								},
-								Args: []ast.Expr{},
+								Args: argsFromParams(params),
 							},
 						},
 					},
